@@ -20,7 +20,7 @@ function App() {
 
   // 1. TỐI ƯU & XỬ LÝ LỖI PDF TỰ ĐỘNG
   useEffect(() => {
-    fetch('/data/database.json')
+    fetch(`${import.meta.env.BASE_URL}data/database.json`)
       .then((res) => res.json())
       .then((data) => {
         const processedData = data.map(exam => {
@@ -149,7 +149,7 @@ function App() {
         {/* LOGO (Chiếm 4 phần) */}
         <div style={{ flex: '4', display: 'flex', alignItems: 'center', gap: '12px', color: '#1e3a8a', whiteSpace: 'nowrap', paddingLeft: '24px', boxSizing: 'border-box' }}>
           <div style={{ padding: '6px', backgroundColor: '#ffffffca', borderRadius: '10px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-            <img src="/favicon.png" alt="Logo" width="30" height="30" style={{ objectFit: 'contain' }} />
+            <img src={`${import.meta.env.BASE_URL}favicon.png`} alt="Logo" width="30" height="30" style={{ objectFit: 'contain' }} />
           </div>
           <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '800', letterSpacing: '-0.5px', color: '#284185' }}>HUS Exam</h2>
         </div>
