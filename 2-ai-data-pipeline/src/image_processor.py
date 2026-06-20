@@ -1,5 +1,7 @@
 """
-Module tiền xử lý ảnh sử dụng OpenCV nhằm tối ưu hóa đầu vào cho mô hình OCR.
+TÊN FILE: image_processor.py
+CHỨC NĂNG: Xử lý làm nét, phóng to và khử nhiễu ảnh từ URL.
+Tối ưu hóa hình ảnh để OCR hoặc model Vision làm việc dễ dàng hơn.
 """
 import cv2
 import numpy as np
@@ -7,7 +9,7 @@ import requests
 
 def download_and_preprocess_image(image_url: str) -> np.ndarray | None:
     """
-    Tải ảnh từ mạng, phóng to, khử nhiễu và nhị phân hóa (Trắng/Đen).
+    Tải ảnh từ mạng, phóng to, khử nhiễu và nhị phân hóa (chuyển Trắng/Đen).
     """
     try:
         response = requests.get(image_url)
@@ -15,23 +17,25 @@ def download_and_preprocess_image(image_url: str) -> np.ndarray | None:
             print(f"⚠️ Lỗi tải ảnh: {image_url}")
             return None
         
-        # Decode ảnh thẳng trên RAM
+        # Decode mảng bytes tải được thành một ma trận ảnh lưu trực tiếp trên RAM (tránh lưu file nháp)
         image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
         img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
         
         if img is None:
             return None
 
-        # 1. Phóng to ảnh 2x (Giúp OCR nhận diện dấu tiếng Việt tốt hơn)
+        # BƯỚC 1: Phóng to ảnh 2x bằng thuật toán nội suy Cubic 
+        # (Giúp OCR nhận diện dấu tiếng Việt bị mờ tốt hơn)
         img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
 
-        # 2. Chuyển sang dải xám (Grayscale)
+        # BƯỚC 2: Chuyển màu sang dải xám (Grayscale)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # 3. Làm mịn (Gaussian Blur) để khử độ nhiễu khối của chuẩn nén JPEG từ Facebook
+        # BƯỚC 3: Làm mịn bằng Gaussian Blur (Khử độ nhiễu pixel vuông khi ảnh bị Facebook nén)
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
         
-        # 4. Nhị phân hóa Otsu (Tự động tìm ngưỡng cắt Trắng/Đen)
+        # BƯỚC 4: Nhị phân hóa bằng thuật toán Otsu
+        # Tự động tìm ngưỡng cắt thích hợp để phân rạch ròi vùng Trắng (nền) và Đen (chữ)
         _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         
         return thresh

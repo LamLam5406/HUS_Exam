@@ -33,7 +33,7 @@ stopBtn.addEventListener('click', async () => {
     
     chrome.tabs.sendMessage(tab.id, { action: "STOP_SCRAPING" });
     
-    statusDiv.innerText = "Trạng thái: Đã dừng bằng tay.";
+    statusDiv.innerText = "Trạng thái: Đã dừng.";
     statusDiv.style.color = "#dc3545";
     
     // Mở khóa lại nút Bắt đầu
