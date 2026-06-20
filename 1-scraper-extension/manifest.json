@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Hus Exam Scraper",
+  "version": "1.0",
+  "description": "Công cụ trích xuất dữ liệu đề thi thô",
+  "action": {
+    "default_popup": "popup/index.html"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*.facebook.com/*",
+    "http://localhost:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.facebook.com/groups/*/media*"],
+      "js": ["content.js"]
+    }
+  ]
+}

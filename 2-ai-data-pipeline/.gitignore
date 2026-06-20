@@ -1,0 +1,36 @@
+# ==========================================
+# 1. THÔNG TIN XÁC THỰC & CẤU HÌNH NHẠY CẢM
+# (Tuyệt đối không đẩy lên Git)
+# ==========================================
+credentials.json
+token.json
+config.json
+.env
+
+# ==========================================
+# 2. DỮ LIỆU ĐẦU RA VÀ FILE TẠM
+# (Dữ liệu do code sinh ra, không cần lưu trữ trên Git)
+# ==========================================
+output/
+*.pdf
+*.jpg
+*.jpeg
+*.png
+
+# ==========================================
+# 3. MÔI TRƯỜNG ẢO & THƯ VIỆN PYTHON
+# ==========================================
+venv/
+env/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ==========================================
+# 4. CẤU HÌNH IDE & HỆ ĐIỀU HÀNH
+# ==========================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
