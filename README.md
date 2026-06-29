@@ -27,7 +27,7 @@ exam-classification-system/
 │   ├── config.json            # Cấu hình đường dẫn, API keys (nếu có)
 │   ├── src/
 │   │   ├── api_server.py      # API nội bộ (FastAPI/Flask) nhận dữ liệu từ Extension
-│   │   ├── image_processor.py # OpenCV: Cắt góc, xoay, cân bằng sáng
+│   │   ├── drive_upload.py    # Đẩy các file PDF lên Drive
 │   │   ├── ocr_engine.py      # Tesseract: Trích xuất chữ từ ảnh
 │   │   ├── classifier.py      # Sklearn: Phân loại môn học, Regex lấy năm
 │   │   └── pdf_builder.py     # Nối ảnh thành PDF
@@ -63,25 +63,27 @@ exam-classification-system/
 
 ---
 
-#### Giai đoạn 2: Trích xuất và Số hóa (Tuần 3 - 5)
-* **Mục tiêu:** Ảnh thô biến thành chữ.
+#### Giai đoạn 2: Bóc tách Siêu dữ liệu (Metadata) (Tuần 3 - 5)
+* **Mục tiêu:** Trích xuất tự động và chuẩn hóa 4 trường thông tin cốt lõi (Tên môn, Mã môn, Học kỳ, Năm học) từ văn bản và hình ảnh.
 * **Công việc:**
-  * Sử dụng OpenCV viết hàm tiền xử lý: chuyển ảnh sang đen trắng, tăng độ tương phản.
-  * Cài đặt Tesseract OCR và chạy thử nghiệm trên các ảnh đã làm sạch.
-  * Tinh chỉnh các tham số cấu hình của Tesseract để nhận diện rõ nét các từ khóa đặc thù (VD: "Đề thi", "Môn", "Thời gian").
-* **Nghiệm thu:** Đưa một ảnh chụp đề thi bất kỳ vào, script in ra được đoạn text rõ ràng.
+  * Xây dựng bộ quy tắc Regex và Keyword Matching để quét nhanh nội dung văn bản (caption), bắt các định dạng chuẩn của năm học, học kỳ, và hashtag môn học.
+  * Tích hợp mô hình AI Vision (Qwen2-VL-2B-Instruct) kết hợp kỹ thuật Lazy Loading (chỉ nạp vào GPU khi cần) để đọc và trích xuất dữ liệu trực tiếp từ ảnh nếu phương pháp Regex chưa lấy đủ thông tin thiết yếu.
+  * Viết bộ lọc chống ảo giác (Post-Processing) cho kết quả JSON trả về từ AI để đảm bảo định dạng các trường dữ liệu hợp lệ.
+  * Sử dụng kỹ thuật Fuzzy Matching (thông qua thư viện difflib) để đối chiếu và chuẩn hóa tên môn, mã môn dựa trên danh mục từ điển chuẩn trong file Excel (subject.xlsx).
+Nghiệm thu: Luồng xử lý kép (Dual-Stream: Regex -> AI Vision -> Excel Validation) hoạt động ổn định, trả về được một chuỗi Metadata chuẩn hóa khi đầu vào là văn bản và URL hình ảnh.
 
----
-
-#### Giai đoạn 3: Phân loại và Đóng gói (Tuần 6 - 8)
-* **Mục tiêu:** Máy tính tự hiểu đây là môn gì và gộp file PDF.
+#### Giai đoạn 3: Phân loại kịch bản, Đóng gói và Lưu trữ (Tuần 6 - 8)
+* **Mục tiêu:** Nhận diện dữ liệu trùng lặp, tự động gộp file PDF, tải lên Cloud và lưu vào Cơ sở dữ liệu (CSDL).
 * **Công việc:**
-  * Xây dựng bộ quy tắc Regex để bắt số "Năm học".
-  * Thu thập thủ công một tập dữ liệu nhỏ (khoảng 100 đề thi) để làm dữ liệu huấn luyện (Training data).
-  * Huấn luyện mô hình SVM (Support Vector Machine) bằng thư viện scikit-learn để dự đoán "Môn học" dựa trên text OCR và caption.
-  * Viết hàm nối các file ảnh đầu ra thành 1 file PDF duy nhất.
-  * Viết hàm ghi thông tin tổng hợp vào tệp `database.json`.
-* **Nghiệm thu:** Script tự động nhận 1 thư mục ảnh, xuất ra 1 file PDF và 1 file JSON chứa metadata chuẩn xác.
+  * Xây dựng thuật toán tạo "Vân tay" (Fingerprint định dạng: Mã Môn|Tên Môn|Học Kỳ|Năm Học) để định danh duy nhất cho từng đề thi, phục vụ việc phát hiện trùng lặp.
+  * Thiết kế luồng phân loại 3 kịch bản xử lý thực tế:
+    * Trường hợp A: Gộp ảnh và tạo lại PDF cho các bài đăng cùng nguồn (đề thi bị ngắt quãng).
+    * Trường hợp B: Bỏ qua dữ liệu để chống rác nếu phát hiện đề thi trùng lặp nhưng khác nguồn đăng.
+    * Trường hợp C: Tạo PDF mới hoàn toàn cho đề thi chưa từng xuất hiện.
+  * Tích hợp module (pdf_builder) để chuyển đổi danh sách các URL ảnh thành một file PDF duy nhất.
+  * Kết nối API (drive_uploader) để tải tự động các file PDF đã tạo lên Google Drive và lấy liên kết (URL) lưu trữ.
+  * Xây dựng cơ chế cập nhật trạng thái liên tục xuống ổ cứng, lưu 6 trường thông tin vào CSDL (database.json) và ghi nhận lịch sử xử lý (processed_ids.txt) để tối ưu hiệu suất cho các lần chạy sau.
+* **Nghiệm thu:** Script main.py (Orchestrator) tự động quét file dữ liệu thô, phân loại chính xác các kịch bản, xuất PDF thành công lên Google Drive và cập nhật đầy đủ thông tin vào CSDL.
 
 ---
 
@@ -103,3 +105,5 @@ exam-classification-system/
   * Đẩy các file PDF lên Google Drive và thiết lập quyền "Bất kỳ ai có liên kết đều có thể xem".
   * Cập nhật link Drive vào file `database.json` và đồng bộ lại lên Web.
 * **Nghiệm thu:** Có link domain thực tế gửi cho bạn bè dùng thử và truy cập mượt mà trên cả điện thoại lẫn máy tính.
+
+* **Website**: https://lamlam5406.github.io/HUS_Exam/
